@@ -7,14 +7,16 @@ repository: https://github.com/daniel-maxhari/dynamic_text_highlighting.git
 issue_tracker: https://github.com/daniel-maxhari/dynamic_text_highlighting/issues
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
-
+  sdk: ">=2.16.1 <3.0.0"
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_lints: ^1.0.0
 
 flutter:
+  uses-material-design: true
