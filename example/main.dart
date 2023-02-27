@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:dynamic_text_highlighting/dynamic_text_highlighting.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(DTHExampleApp());
@@ -31,14 +31,16 @@ class _DTHExampleState extends State<DTHExample> {
     return Scaffold(
       body: Center(
         child: DynamicTextHighlighting(
-          text: 'This is a demo text, the specified texts will be highlighted.',
-          highlights: const ['this', 'demo', 'will'],
+          text:
+              'This is a demo text, the specified texts will be highlighted. joão',
+          highlights: const ['this', 'demo', 'will', 'joao'],
           color: Colors.yellow,
           style: TextStyle(
             fontSize: 18.0,
             color: Colors.black,
           ),
           caseSensitive: false,
+          accentSensitive: false,
         ),
       ),
     );
