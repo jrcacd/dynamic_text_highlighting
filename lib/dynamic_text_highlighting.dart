@@ -10,29 +10,31 @@ class DynamicTextHighlighting extends StatelessWidget {
   final Color color;
   final TextStyle style;
   final bool caseSensitive;
+  final bool accentSensitive;
 
   //RichText
-  final TextAlign? textAlign;
-  final TextDirection? textDirection;
-  final bool? softWrap;
-  final TextOverflow? overflow;
-  final double? textScaleFactor;
-  final int? maxLines;
-  final Locale? locale;
-  final StrutStyle? strutStyle;
-  final TextWidthBasis? textWidthBasis;
-  final TextHeightBehavior? textHeightBehavior;
+  final TextAlign textAlign;
+  final TextDirection textDirection;
+  final bool softWrap;
+  final TextOverflow overflow;
+  final double textScaleFactor;
+  final int maxLines;
+  final Locale locale;
+  final StrutStyle strutStyle;
+  final TextWidthBasis textWidthBasis;
+  final TextHeightBehavior textHeightBehavior;
 
   DynamicTextHighlighting({
     //DynamicTextHighlighting
-    Key? key,
-    required this.text,
-    required this.highlights,
+    Key key,
+    this.text,
+    this.highlights,
     this.color = Colors.yellow,
     this.style = const TextStyle(
       color: Colors.black,
     ),
     this.caseSensitive = true,
+    this.accentSensitive = true,
 
     //RichText
     this.textAlign = TextAlign.start,
@@ -45,7 +47,13 @@ class DynamicTextHighlighting extends StatelessWidget {
     this.strutStyle,
     this.textWidthBasis = TextWidthBasis.parent,
     this.textHeightBehavior,
-  })  : assert(textAlign != null),
+  })  : assert(text != null),
+        assert(highlights != null),
+        assert(color != null),
+        assert(style != null),
+        assert(caseSensitive != null),
+        assert(accentSensitive != null),
+        assert(textAlign != null),
         assert(softWrap != null),
         assert(overflow != null),
         assert(textScaleFactor != null),
@@ -64,20 +72,56 @@ class DynamicTextHighlighting extends StatelessWidget {
     }
     for (int i = 0; i < highlights.length; i++) {
       if (highlights[i] == null) {
+        assert(highlights[i] != null);
         return _richText(_normalSpan(text));
       }
       if (highlights[i].isEmpty) {
+        assert(highlights[i].isNotEmpty);
         return _richText(_normalSpan(text));
       }
     }
 
+    // All the accents with all the variations
+    // First character of each element is the main ascii character
+    List<String> accents = [
+      'aàáâãăäåą',
+      "AÀÁÂÃĂÄÅĄ",
+      'cç',
+      'CÇ',
+      'eèéêëèěęėĕē',
+      'EÈÉÊËÈĚĘĖĔĒ',
+      'gğġģĝ',
+      'GĞĠĢĜ',
+      'iìíîïĩīĭį',
+      'IÌÍÎÏĨĪĬĮ',
+      'lĺļľŀł',
+      'LĹĻĽĿŁ',
+      'nñńņňŋ',
+      'NÑŃŅŇŊ',
+      'oōŏőòóôõö',
+      'OŌŎŐÒÓÔÕÖ',
+      'rŕŗř',
+      'RŔŖŘ',
+      'sśşš',
+      'SŚŞŠ',
+      'tţťŧ',
+      'TŢŤŦ',
+      'uùúûüũūŭůűų',
+      'UÙÚÛÜŨŪŬŮŰŲ',
+    ];
+    // Map with all accents
+    Map<String, String> accentsMap = Map.fromEntries(accents
+        .map((accents) => accents.split('').map((e) => MapEntry(e, accents[0])))
+        .toList()
+        .expand((i) => i));
+
     //Main code
-    List<TextSpan> _spans = [];
+    List<TextSpan> _spans = List();
     int _start = 0;
 
     //For "No Case Sensitive" option
     String _lowerCaseText = text.toLowerCase();
-    List<String> _lowerCaseHighlights = [];
+    List<String> _lowerCaseHighlights = List();
 
     highlights.forEach((element) {
       _lowerCaseHighlights.add(element.toLowerCase());
@@ -88,14 +132,16 @@ class DynamicTextHighlighting extends StatelessWidget {
 
       if (caseSensitive) {
         for (int i = 0; i < highlights.length; i++) {
-          int _index = text.indexOf(highlights[i], _start);
+          int _index = accentSensitiveText(text, accentsMap)
+              .indexOf(accentSensitiveText(highlights[i], accentsMap), _start);
           if (_index >= 0) {
             _highlightsMap.putIfAbsent(_index, () => highlights[i]);
           }
         }
       } else {
         for (int i = 0; i < highlights.length; i++) {
-          int _index = _lowerCaseText.indexOf(_lowerCaseHighlights[i], _start);
+          int _index = accentSensitiveText(_lowerCaseText, accentsMap).indexOf(
+              accentSensitiveText(_lowerCaseHighlights[i], accentsMap), _start);
           if (_index >= 0) {
             _highlightsMap.putIfAbsent(_index, () => highlights[i]);
           }
@@ -103,12 +149,12 @@ class DynamicTextHighlighting extends StatelessWidget {
       }
 
       if (_highlightsMap.isNotEmpty) {
-        List<int> _indexes = [];
+        List<int> _indexes = List();
         _highlightsMap.forEach((key, value) => _indexes.add(key));
 
         int _currentIndex = _indexes.reduce(min);
         String _currentHighlight = text.substring(_currentIndex,
-            _currentIndex + _highlightsMap[_currentIndex]!.length);
+            _currentIndex + _highlightsMap[_currentIndex].length);
 
         if (_currentIndex == _start) {
           _spans.add(_highlightSpan(_currentHighlight));
@@ -166,16 +212,29 @@ class DynamicTextHighlighting extends StatelessWidget {
     return RichText(
       key: key,
       text: text,
-      textAlign: textAlign!,
+      textAlign: textAlign,
       textDirection: textDirection,
-      softWrap: softWrap!,
-      overflow: overflow!,
-      textScaleFactor: textScaleFactor!,
+      softWrap: softWrap,
+      overflow: overflow,
+      textScaleFactor: textScaleFactor,
       maxLines: maxLines,
       locale: locale,
       strutStyle: strutStyle,
-      textWidthBasis: textWidthBasis!,
+      textWidthBasis: textWidthBasis,
       textHeightBehavior: textHeightBehavior,
     );
+  }
+
+  String removeAccents(String text, Map accentsMap) {
+    return text
+        .split('')
+        .map((e) => accentsMap.containsKey(e) ? accentsMap[e] : e)
+        .toList()
+        .fold('', (previousValue, element) => previousValue + element);
+  }
+
+  String accentSensitiveText(text, Map accentsMap) {
+    if (!accentSensitive) return removeAccents(text, accentsMap);
+    return text;
   }
 }
